@@ -1,0 +1,1237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Three Body Lab</title>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --panel: #121933;
+      --panel-2: #1a2345;
+      --text: #e8ecff;
+      --muted: #a8b0d6;
+      --accent: #8fb3ff;
+      --warn: #ffb366;
+      --bad: #ff7a7a;
+      --good: #8ee6a3;
+      --border: #2d3868;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: radial-gradient(circle at top, #16214d 0%, var(--bg) 42%);
+      color: var(--text);
+      font-family: Inter, Arial, Helvetica, sans-serif;
+      overflow: hidden;
+    }
+
+    body {
+      display: grid;
+      grid-template-columns: 290px 1fr 290px;
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      background: rgba(10, 15, 32, 0.96);
+      padding: 14px;
+      overflow-y: auto;
+    }
+
+    .sidebar.left { border-right: 1px solid var(--border); }
+    .sidebar.right { border-left: 1px solid var(--border); }
+
+    .main {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      min-width: 0;
+      min-height: 100vh;
+    }
+
+    .topbar {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(12, 18, 40, 0.78);
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .topbar strong { font-size: 14px; }
+
+    .subtitle {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .panel {
+      background: linear-gradient(180deg, rgba(30, 40, 77, 0.72), rgba(20, 28, 56, 0.72));
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 12px;
+      margin-bottom: 12px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
+    }
+
+    .panel h1 {
+      font-size: 20px;
+      margin: 0 0 6px 0;
+    }
+
+    .panel h2 {
+      margin: 0 0 10px 0;
+      font-size: 14px;
+      letter-spacing: 0.02em;
+    }
+
+    .control-group { display: grid; gap: 10px; }
+    .control { display: grid; gap: 6px; }
+
+    .control label {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    input[type="range"], select { width: 100%; }
+
+    select, button {
+      background: var(--panel-2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 13px;
+    }
+
+    button {
+      cursor: pointer;
+      transition: transform 0.12s ease, background 0.12s ease;
+    }
+
+    button:hover {
+      background: #24305b;
+      transform: translateY(-1px);
+    }
+
+    .button-row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .stat {
+      background: rgba(8, 12, 28, 0.55);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px;
+      min-height: 66px;
+    }
+
+    .stat .label {
+      color: var(--muted);
+      font-size: 11px;
+      margin-bottom: 4px;
+    }
+
+    .stat .value {
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .status-box { display: grid; gap: 8px; }
+
+    .pill {
+      display: inline-block;
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      border: 1px solid var(--border);
+      width: fit-content;
+    }
+
+    .good { color: var(--good); }
+    .warn { color: var(--warn); }
+    .bad { color: var(--bad); }
+
+    .canvas-wrap {
+      position: relative;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      background: radial-gradient(circle at center, rgba(29, 43, 90, 0.25), rgba(4, 8, 20, 0.96));
+    }
+
+    .overlay {
+      position: absolute;
+      left: 16px;
+      top: 16px;
+      background: rgba(6, 10, 24, 0.76);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px;
+      min-width: 260px;
+      max-width: 320px;
+      backdrop-filter: blur(6px);
+      pointer-events: none;
+    }
+
+    .overlay h3 {
+      margin: 0 0 8px 0;
+      font-size: 14px;
+    }
+
+    .overlay p {
+      margin: 5px 0;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .structure-banner {
+      position: absolute;
+      right: 16px;
+      top: 16px;
+      background: rgba(6, 10, 24, 0.82);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 10px 12px;
+      min-width: 240px;
+      max-width: 340px;
+      backdrop-filter: blur(6px);
+      pointer-events: none;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.22);
+    }
+
+    .structure-banner .title {
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 5px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .structure-banner .mode {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .structure-banner .desc {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.4;
+      margin-bottom: 6px;
+    }
+
+    .structure-banner .subline {
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.35;
+    }
+
+    .footer-note {
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .mini-note {
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.45;
+      margin-top: 4px;
+    }
+
+    @media (max-width: 1180px) {
+      body { grid-template-columns: 270px 1fr 270px; }
+    }
+
+    @media (max-width: 980px) {
+      body {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto 1fr;
+        overflow: auto;
+      }
+
+      .sidebar.left,
+      .sidebar.right {
+        border: 0;
+        border-bottom: 1px solid var(--border);
+        max-height: 38vh;
+      }
+
+      .main { min-height: 60vh; }
+
+      .overlay {
+        left: 12px;
+        top: 12px;
+        right: 12px;
+        min-width: 0;
+        max-width: none;
+      }
+
+      .structure-banner {
+        left: 12px;
+        right: 12px;
+        top: auto;
+        bottom: 12px;
+        min-width: 0;
+        max-width: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <aside class="sidebar left">
+    <div class="panel">
+      <h1>Three Body Lab</h1>
+      <div class="subtitle">
+        Interactive gravity sandbox for three bodies. Tune mass, gravity, spacing, and velocity,
+        then see whether the system stays bounded, drifts, whips, or ejects.
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>System Setup</h2>
+      <div class="control-group">
+        <div class="control">
+          <label><span>Preset</span><span id="presetLabel">Triangle</span></label>
+          <select id="presetSelect">
+            <option value="triangle">Triangle</option>
+            <option value="binary_intruder">Binary + Intruder</option>
+            <option value="line">Line Start</option>
+            <option value="chaos">Chaos Seed</option>
+          </select>
+        </div>
+
+        <div class="control">
+          <label><span>Gravity (G)</span><span id="gravityValue">1.00</span></label>
+          <input id="gravity" type="range" min="0.1" max="5" step="0.01" value="1.0" />
+        </div>
+
+        <div class="control">
+          <label><span>Base Distance</span><span id="distanceValue">140</span></label>
+          <input id="distance" type="range" min="60" max="280" step="1" value="140" />
+        </div>
+
+        <div class="control">
+          <label><span>Velocity Scale</span><span id="velocityValue">1.00</span></label>
+          <input id="velocity" type="range" min="0" max="3" step="0.01" value="1.0" />
+        </div>
+
+        <div class="control">
+          <label><span>Time Step</span><span id="dtValue">0.12</span></label>
+          <input id="dt" type="range" min="0.02" max="0.4" step="0.01" value="0.12" />
+        </div>
+
+        <div class="control">
+          <label><span>Softening</span><span id="softeningValue">18</span></label>
+          <input id="softening" type="range" min="2" max="40" step="1" value="18" />
+        </div>
+
+        <div class="control">
+          <label><span>Trail Length</span><span id="trailValue">180</span></label>
+          <input id="trail" type="range" min="20" max="400" step="1" value="180" />
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Masses</h2>
+      <div class="control-group">
+        <div class="control">
+          <label><span>Body 1 Mass</span><span id="m1Value">120</span></label>
+          <input id="m1" type="range" min="10" max="300" step="1" value="120" />
+        </div>
+        <div class="control">
+          <label><span>Body 2 Mass</span><span id="m2Value">120</span></label>
+          <input id="m2" type="range" min="10" max="300" step="1" value="120" />
+        </div>
+        <div class="control">
+          <label><span>Body 3 Mass</span><span id="m3Value">120</span></label>
+          <input id="m3" type="range" min="10" max="300" step="1" value="120" />
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Actions</h2>
+      <div class="button-row">
+        <button id="resetBtn">Reset</button>
+        <button id="pauseBtn">Pause</button>
+        <button id="randomizeBtn">Randomize</button>
+        <button id="centerBtn">Center Drift</button>
+      </div>
+      <div class="mini-note">
+        Center Drift recenters the current run visually without changing the internal relative motion.
+      </div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <strong>Goal:</strong> tune the system until all three bodies stay bounded without obvious ejection.
+      </div>
+      <div class="subtitle">This is an experimental sandbox. “Stable” here means bounded, low-drift, non-ejecting behavior over the observed run window.</div>
+    </div>
+
+    <div class="canvas-wrap">
+      <canvas id="simCanvas"></canvas>
+      <div class="overlay">
+        <h3>What to watch</h3>
+        <p><strong>Stable-ish:</strong> bodies remain bounded, no body escapes far outward, and center-of-mass drift stays low.</p>
+        <p><strong>Unstable:</strong> close encounters spike, one body gets slingshotted, trails stretch outward, or readouts get noisy.</p>
+        <p><strong>Resonance:</strong> watch for repeatable timing relationships in how the bodies loop around the shared center.</p>
+      </div>
+      <div class="structure-banner">
+        <div class="title">Structure Mode</div>
+        <div class="mode" id="structureMode">Initializing</div>
+        <div class="desc" id="structureDesc">Scanning geometry and motion.</div>
+        <div class="subline" id="resonanceBanner">Resonance: calibrating</div>
+      </div>
+      <div class="structure-banner" id="goldBanner" style="top: 150px; right: 16px; display: none; border-color: rgba(255,226,138,0.55); box-shadow: 0 0 28px rgba(255,226,138,0.18), 0 12px 30px rgba(0,0,0,0.22);">
+        <div class="title">Stable Configuration Found</div>
+        <div class="mode good" id="goldMode">Gold State</div>
+        <div class="desc" id="goldDesc">A high-quality bounded configuration has held long enough to count as a discovery candidate.</div>
+        <div class="subline" id="goldStats">Awaiting lock.</div>
+      </div>
+    </div>
+  </main>
+
+  <aside class="sidebar right">
+    <div class="panel">
+      <h2>Measured Readouts</h2>
+      <div class="stats">
+        <div class="stat"><div class="label">Total Energy</div><div class="value" id="energyReadout">0</div></div>
+        <div class="stat"><div class="label">Angular Momentum</div><div class="value" id="momentumReadout">0</div></div>
+        <div class="stat"><div class="label">Nearest Pair</div><div class="value" id="nearestReadout">0</div></div>
+        <div class="stat"><div class="label">Max Radius</div><div class="value" id="radiusReadout">0</div></div>
+        <div class="stat"><div class="label">COM Drift</div><div class="value" id="driftReadout">0</div></div>
+        <div class="stat"><div class="label">Stability Score</div><div class="value" id="stabilityReadout">0</div></div>
+        <div class="stat"><div class="label">Bounded Time</div><div class="value" id="boundedReadout">0.0 s</div></div>
+        <div class="stat"><div class="label">Best Run</div><div class="value" id="bestReadout">0.0 s</div></div>
+        <div class="stat"><div class="label">Triangle Quality</div><div class="value" id="triangleReadout">0.0</div></div>
+        <div class="stat"><div class="label">Coherence</div><div class="value" id="coherenceReadout">0.0</div></div>
+        <div class="stat"><div class="label">Resonance Score</div><div class="value" id="resonanceReadout">0.0</div></div>
+        <div class="stat"><div class="label">Best Ratio</div><div class="value" id="ratioReadout">--</div></div>
+        <div class="stat"><div class="label">Gold Timer</div><div class="value" id="goldTimerReadout">0.0 s</div></div>
+        <div class="stat"><div class="label">Gold Count</div><div class="value" id="goldCountReadout">0</div></div>
+      </div>
+    </div>
+
+    <div class="panel status-box">
+      <h2>Status</h2>
+      <div class="pill" id="statePill">Initializing</div>
+      <div class="pill" id="structurePill">Scanning</div>
+      <div class="pill" id="resonancePill">Resonance: scanning</div>
+      <div class="pill" id="goldPill">Gold state: searching</div>
+      <div class="footer-note">
+        The sim now measures timing alignment as well as geometry. Resonance here means the three bodies are moving with simple, repeatable orbital timing ratios around the shared center.
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Visual Guides</h2>
+      <div class="footer-note">
+        <strong>Center cross:</strong> current center of mass.<br>
+        <strong>Center trail:</strong> center-of-mass path over time.<br>
+        <strong>Binding triangle:</strong> strengthens when the system is more coherent.<br>
+        <strong>Drift line:</strong> shows displacement from the initial center.<br>
+        <strong>Structure ring:</strong> pulses when coherent triangle structure forms.<br>
+        <strong>Resonance ring:</strong> faint outer ring appears when timing ratios simplify.
+      </div>
+    </div>
+  </aside>
+
+  <script>
+    const canvas = document.getElementById('simCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const controls = {
+      preset: document.getElementById('presetSelect'),
+      gravity: document.getElementById('gravity'),
+      distance: document.getElementById('distance'),
+      velocity: document.getElementById('velocity'),
+      dt: document.getElementById('dt'),
+      softening: document.getElementById('softening'),
+      trail: document.getElementById('trail'),
+      m1: document.getElementById('m1'),
+      m2: document.getElementById('m2'),
+      m3: document.getElementById('m3'),
+      resetBtn: document.getElementById('resetBtn'),
+      pauseBtn: document.getElementById('pauseBtn'),
+      randomizeBtn: document.getElementById('randomizeBtn'),
+      centerBtn: document.getElementById('centerBtn')
+    };
+
+    const labels = {
+      preset: document.getElementById('presetLabel'),
+      gravity: document.getElementById('gravityValue'),
+      distance: document.getElementById('distanceValue'),
+      velocity: document.getElementById('velocityValue'),
+      dt: document.getElementById('dtValue'),
+      softening: document.getElementById('softeningValue'),
+      trail: document.getElementById('trailValue'),
+      m1: document.getElementById('m1Value'),
+      m2: document.getElementById('m2Value'),
+      m3: document.getElementById('m3Value')
+    };
+
+    const readouts = {
+      energy: document.getElementById('energyReadout'),
+      momentum: document.getElementById('momentumReadout'),
+      nearest: document.getElementById('nearestReadout'),
+      radius: document.getElementById('radiusReadout'),
+      drift: document.getElementById('driftReadout'),
+      stability: document.getElementById('stabilityReadout'),
+      bounded: document.getElementById('boundedReadout'),
+      best: document.getElementById('bestReadout'),
+      triangle: document.getElementById('triangleReadout'),
+      coherence: document.getElementById('coherenceReadout'),
+      resonance: document.getElementById('resonanceReadout'),
+      ratio: document.getElementById('ratioReadout'),
+      goldTimer: document.getElementById('goldTimerReadout'),
+      goldCount: document.getElementById('goldCountReadout'),
+      statePill: document.getElementById('statePill'),
+      structurePill: document.getElementById('structurePill'),
+      resonancePill: document.getElementById('resonancePill'),
+      structureMode: document.getElementById('structureMode'),
+      structureDesc: document.getElementById('structureDesc'),
+      resonanceBanner: document.getElementById('resonanceBanner'),
+      goldPill: document.getElementById('goldPill'),
+      goldBanner: document.getElementById('goldBanner'),
+      goldMode: document.getElementById('goldMode'),
+      goldDesc: document.getElementById('goldDesc'),
+      goldStats: document.getElementById('goldStats')
+    };
+
+    const colors = ['#8fb3ff', '#ff9ec7', '#ffe28a'];
+    let width = 0;
+    let height = 0;
+    let isPaused = false;
+    let bodies = [];
+    let initialCOM = { x: 0, y: 0 };
+    let comTrail = [];
+    let boundedTime = 0;
+    let bestBoundedTime = 0;
+    let structurePulse = 0;
+    let resonancePulse = 0;
+    let goldPulse = 0;
+    let goldTimer = 0;
+    let goldFoundCount = 0;
+    let goldLatch = false;
+
+    function resize() {
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      width = rect.width;
+      height = rect.height;
+      canvas.width = Math.round(rect.width * dpr);
+      canvas.height = Math.round(rect.height * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    window.addEventListener('resize', resize);
+    resize();
+
+    function fmt(value, digits = 2) {
+      return Number(value).toFixed(digits);
+    }
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function updateLabels() {
+      labels.preset.textContent = controls.preset.options[controls.preset.selectedIndex].text;
+      labels.gravity.textContent = fmt(controls.gravity.value, 2);
+      labels.distance.textContent = controls.distance.value;
+      labels.velocity.textContent = fmt(controls.velocity.value, 2);
+      labels.dt.textContent = fmt(controls.dt.value, 2);
+      labels.softening.textContent = controls.softening.value;
+      labels.trail.textContent = controls.trail.value;
+      labels.m1.textContent = controls.m1.value;
+      labels.m2.textContent = controls.m2.value;
+      labels.m3.textContent = controls.m3.value;
+    }
+
+    function getParams() {
+      return {
+        G: parseFloat(controls.gravity.value),
+        distance: parseFloat(controls.distance.value),
+        velocityScale: parseFloat(controls.velocity.value),
+        dt: parseFloat(controls.dt.value),
+        softening: parseFloat(controls.softening.value),
+        trailLength: parseInt(controls.trail.value, 10),
+        masses: [parseFloat(controls.m1.value), parseFloat(controls.m2.value), parseFloat(controls.m3.value)],
+        preset: controls.preset.value
+      };
+    }
+
+    function computeCOM(activeBodies = bodies) {
+      let totalMass = 0;
+      let sumX = 0;
+      let sumY = 0;
+      for (const b of activeBodies) {
+        totalMass += b.m;
+        sumX += b.x * b.m;
+        sumY += b.y * b.m;
+      }
+      return totalMass > 0 ? { x: sumX / totalMass, y: sumY / totalMass } : { x: 0, y: 0 };
+    }
+
+    function zeroNetMomentum(activeBodies = bodies) {
+      let totalMass = 0;
+      let px = 0;
+      let py = 0;
+      for (const b of activeBodies) {
+        totalMass += b.m;
+        px += b.vx * b.m;
+        py += b.vy * b.m;
+      }
+      const comVx = px / totalMass;
+      const comVy = py / totalMass;
+      for (const b of activeBodies) {
+        b.vx -= comVx;
+        b.vy -= comVy;
+      }
+    }
+
+    function buildBodies() {
+      const p = getParams();
+      const cx = width * 0.5;
+      const cy = height * 0.52;
+      const d = p.distance;
+      const v = p.velocityScale;
+      const masses = p.masses;
+
+      let newBodies;
+
+      if (p.preset === 'triangle') {
+        newBodies = [
+          { x: cx, y: cy - d * 0.82, vx: 1.0 * v, vy: 0.0, m: masses[0], trail: [] },
+          { x: cx - d * 0.72, y: cy + d * 0.42, vx: -0.5 * v, vy: -0.9 * v, m: masses[1], trail: [] },
+          { x: cx + d * 0.72, y: cy + d * 0.42, vx: -0.5 * v, vy: 0.9 * v, m: masses[2], trail: [] }
+        ];
+      } else if (p.preset === 'binary_intruder') {
+        newBodies = [
+          { x: cx - d * 0.38, y: cy, vx: 0.0, vy: -1.0 * v, m: masses[0], trail: [] },
+          { x: cx + d * 0.38, y: cy, vx: 0.0, vy: 1.0 * v, m: masses[1], trail: [] },
+          { x: cx, y: cy - d * 1.35, vx: 1.18 * v, vy: 0.0, m: masses[2], trail: [] }
+        ];
+      } else if (p.preset === 'line') {
+        newBodies = [
+          { x: cx - d, y: cy, vx: 0.0, vy: 0.8 * v, m: masses[0], trail: [] },
+          { x: cx, y: cy, vx: 0.0, vy: -0.15 * v, m: masses[1], trail: [] },
+          { x: cx + d, y: cy, vx: 0.0, vy: -0.8 * v, m: masses[2], trail: [] }
+        ];
+      } else {
+        newBodies = Array.from({ length: 3 }, (_, i) => ({
+          x: cx + (Math.random() - 0.5) * d * 1.8,
+          y: cy + (Math.random() - 0.5) * d * 1.8,
+          vx: (Math.random() - 0.5) * 2.4 * v,
+          vy: (Math.random() - 0.5) * 2.4 * v,
+          m: masses[i],
+          trail: []
+        }));
+      }
+
+      zeroNetMomentum(newBodies);
+      initialCOM = computeCOM(newBodies);
+      comTrail = [{ x: initialCOM.x, y: initialCOM.y }];
+      boundedTime = 0;
+      structurePulse = 0;
+      resonancePulse = 0;
+      goldPulse = 0;
+      goldTimer = 0;
+      goldLatch = false;
+      return newBodies;
+    }
+
+    function resetSimulation() {
+      updateLabels();
+      bodies = buildBodies();
+    }
+
+    function randomizeSystem() {
+      controls.m1.value = Math.floor(40 + Math.random() * 220);
+      controls.m2.value = Math.floor(40 + Math.random() * 220);
+      controls.m3.value = Math.floor(40 + Math.random() * 220);
+      controls.distance.value = Math.floor(90 + Math.random() * 120);
+      controls.velocity.value = (0.35 + Math.random() * 1.7).toFixed(2);
+      controls.gravity.value = (0.4 + Math.random() * 2.6).toFixed(2);
+      updateLabels();
+      resetSimulation();
+    }
+
+    function centerDrift() {
+      const com = computeCOM();
+      const dx = width * 0.5 - com.x;
+      const dy = height * 0.52 - com.y;
+      for (const b of bodies) {
+        b.x += dx;
+        b.y += dy;
+        b.trail = b.trail.map(p => ({ x: p.x + dx, y: p.y + dy }));
+      }
+      comTrail = comTrail.map(p => ({ x: p.x + dx, y: p.y + dy }));
+      initialCOM = { x: initialCOM.x + dx, y: initialCOM.y + dy };
+    }
+
+    function distance(a, b) {
+      return Math.hypot(a.x - b.x, a.y - b.y);
+    }
+
+    function stepSimulation() {
+      const p = getParams();
+      const dt = p.dt;
+      const eps2 = p.softening * p.softening;
+      const acc = bodies.map(() => ({ ax: 0, ay: 0 }));
+
+      for (let i = 0; i < bodies.length; i++) {
+        for (let j = i + 1; j < bodies.length; j++) {
+          const bi = bodies[i];
+          const bj = bodies[j];
+          const dx = bj.x - bi.x;
+          const dy = bj.y - bi.y;
+          const r2 = dx * dx + dy * dy + eps2;
+          const r = Math.sqrt(r2);
+          const factor = p.G / (r2 * r);
+          const fax = factor * dx;
+          const fay = factor * dy;
+
+          acc[i].ax += fax * bj.m;
+          acc[i].ay += fay * bj.m;
+          acc[j].ax -= fax * bi.m;
+          acc[j].ay -= fay * bi.m;
+        }
+      }
+
+      for (let i = 0; i < bodies.length; i++) {
+        bodies[i].vx += acc[i].ax * dt;
+        bodies[i].vy += acc[i].ay * dt;
+      }
+
+      for (const b of bodies) {
+        b.x += b.vx * dt;
+        b.y += b.vy * dt;
+        b.trail.push({ x: b.x, y: b.y });
+        if (b.trail.length > p.trailLength) b.trail.shift();
+      }
+
+      const com = computeCOM();
+      comTrail.push({ x: com.x, y: com.y });
+      if (comTrail.length > p.trailLength) comTrail.shift();
+    }
+
+    function computeGeometryMetrics() {
+      const s1 = distance(bodies[0], bodies[1]);
+      const s2 = distance(bodies[1], bodies[2]);
+      const s3 = distance(bodies[2], bodies[0]);
+      const sides = [s1, s2, s3];
+      const mean = (s1 + s2 + s3) / 3;
+      const variance = ((s1 - mean) ** 2 + (s2 - mean) ** 2 + (s3 - mean) ** 2) / 3;
+      const std = Math.sqrt(variance);
+      const normalizedSideVariance = mean > 0 ? std / mean : 1;
+      const triangleQuality = clamp(100 * (1 - normalizedSideVariance * 2.2), 0, 100);
+      const sorted = [...sides].sort((a, b) => a - b);
+      const longest = sorted[2];
+      const shortest = sorted[0];
+      const ratio = longest > 0 ? shortest / longest : 0;
+
+      return {
+        sides,
+        meanSide: mean,
+        triangleQuality,
+        sideRatio: ratio
+      };
+    }
+
+    function simplifyRatio(x) {
+      const candidates = [
+        [1,1],[2,1],[3,1],[3,2],[4,3],[5,4],[5,3],[4,1],[5,2]
+      ];
+      let best = candidates[0];
+      let bestErr = Infinity;
+      for (const c of candidates) {
+        const val = c[0] / c[1];
+        const err = Math.abs(x - val);
+        if (err < bestErr) {
+          bestErr = err;
+          best = c;
+        }
+      }
+      return { pair: `${best[0]}:${best[1]}`, error: bestErr };
+    }
+
+    function computeResonanceMetrics() {
+      const com = computeCOM();
+      const omega = bodies.map(b => {
+        const dx = b.x - com.x;
+        const dy = b.y - com.y;
+        const r = Math.hypot(dx, dy);
+        const tangential = r > 1e-6 ? Math.abs(dx * b.vy - dy * b.vx) / r : 0;
+        return r > 1e-6 ? tangential / r : 0;
+      });
+
+      const pairs = [
+        { name: '1–2', raw: omega[0] > omega[1] ? omega[0] / Math.max(omega[1], 1e-6) : omega[1] / Math.max(omega[0], 1e-6) },
+        { name: '2–3', raw: omega[1] > omega[2] ? omega[1] / Math.max(omega[2], 1e-6) : omega[2] / Math.max(omega[1], 1e-6) },
+        { name: '1–3', raw: omega[0] > omega[2] ? omega[0] / Math.max(omega[2], 1e-6) : omega[2] / Math.max(omega[0], 1e-6) }
+      ];
+
+      const scored = pairs.map(p => {
+        const simp = simplifyRatio(p.raw);
+        return {
+          name: p.name,
+          raw: p.raw,
+          pair: simp.pair,
+          error: simp.error,
+          score: clamp(100 * (1 - simp.error / 0.35), 0, 100)
+        };
+      }).sort((a, b) => b.score - a.score);
+
+      const best = scored[0];
+      const avg = (scored[0].score + scored[1].score + scored[2].score) / 3;
+      const resonanceScore = clamp(avg * 0.55 + best.score * 0.45, 0, 100);
+
+      return {
+        omega,
+        bestRatio: `${best.name} ≈ ${best.pair}`,
+        bestScore: best.score,
+        resonanceScore
+      };
+    }
+
+    function computeMetrics() {
+      const p = getParams();
+      let kinetic = 0;
+      let potential = 0;
+      let angularMomentum = 0;
+      let nearest = Infinity;
+      const com = computeCOM();
+      let maxRadius = 0;
+
+      for (const b of bodies) {
+        kinetic += 0.5 * b.m * (b.vx * b.vx + b.vy * b.vy);
+        const dx = b.x - com.x;
+        const dy = b.y - com.y;
+        const r = Math.hypot(dx, dy);
+        maxRadius = Math.max(maxRadius, r);
+        angularMomentum += b.m * (dx * b.vy - dy * b.vx);
+      }
+
+      for (let i = 0; i < bodies.length; i++) {
+        for (let j = i + 1; j < bodies.length; j++) {
+          const r = distance(bodies[i], bodies[j]);
+          nearest = Math.min(nearest, r);
+          potential += -p.G * bodies[i].m * bodies[j].m / Math.sqrt(r * r + p.softening * p.softening);
+        }
+      }
+
+      const drift = Math.hypot(com.x - initialCOM.x, com.y - initialCOM.y);
+      const normRadius = maxRadius / (Math.min(width, height) * 0.40);
+      const encounterPenalty = nearest < 35 ? (35 - nearest) / 35 : 0;
+      const driftPenalty = drift / 80;
+      const ejectPenalty = maxRadius > Math.min(width, height) * 0.44 ? (maxRadius / (Math.min(width, height) * 0.44) - 1) : 0;
+      const rawScore = 100 - (normRadius * 20 + encounterPenalty * 25 + driftPenalty * 20 + ejectPenalty * 35);
+      const stabilityScore = clamp(rawScore, 0, 100);
+
+      const bounded = maxRadius < Math.min(width, height) * 0.43 && nearest > 26 && drift < 55;
+      if (bounded && !isPaused) {
+        boundedTime += p.dt;
+        bestBoundedTime = Math.max(bestBoundedTime, boundedTime);
+      } else if (!bounded && !isPaused) {
+        boundedTime = 0;
+      }
+
+      const geometry = computeGeometryMetrics();
+      const resonance = computeResonanceMetrics();
+      const coherence = clamp(0.44 * stabilityScore + 0.32 * geometry.triangleQuality + 0.24 * resonance.resonanceScore, 0, 100);
+
+      const goldCandidate = bounded && stabilityScore >= 90 && coherence >= 85 && resonance.resonanceScore >= 80;
+      if (goldCandidate && !isPaused) {
+        goldTimer += p.dt;
+      } else if (!goldCandidate && !isPaused) {
+        goldTimer = 0;
+        goldLatch = false;
+      }
+
+      const goldFound = goldCandidate && goldTimer >= 8.0;
+      if (goldFound && !goldLatch) {
+        goldFoundCount += 1;
+        goldLatch = true;
+      }
+
+      return {
+        energy: kinetic + potential,
+        angularMomentum,
+        nearest,
+        maxRadius,
+        drift,
+        stabilityScore,
+        bounded,
+        com,
+        geometry,
+        resonance,
+        coherence,
+        goldCandidate,
+        goldFound
+      };
+    }
+
+    function classifyState(metrics) {
+      const nearEdge = metrics.maxRadius > Math.min(width, height) * 0.44;
+      const closeEncounter = metrics.nearest < 24;
+      const drifting = metrics.drift > 50;
+
+      if (nearEdge) return { text: 'Ejection Risk', cls: 'bad' };
+      if (closeEncounter || drifting || metrics.stabilityScore < 45) return { text: 'Chaotic / Unstable', cls: 'warn' };
+      if (metrics.stabilityScore < 72) return { text: 'Semi-Stable', cls: 'warn' };
+      return { text: 'Bounded / Stable-ish', cls: 'good' };
+    }
+
+    function classifyStructure(metrics) {
+      const tq = metrics.geometry.triangleQuality;
+      const coh = metrics.coherence;
+      const bounded = metrics.bounded;
+      const near = metrics.nearest;
+      const ratio = metrics.geometry.sideRatio;
+      const resonant = metrics.resonance.resonanceScore > 74;
+
+      if (metrics.maxRadius > Math.min(width, height) * 0.44) {
+        return { mode: 'Ejection Mode', desc: 'One body is stretching beyond the shared structure.', cls: 'bad' };
+      }
+
+      if (near < 34 && ratio < 0.55) {
+        return {
+          mode: resonant ? 'Binary Resonance' : 'Binary Capture',
+          desc: resonant ? 'Two bodies are timing together while the third behaves more like an intruder.' : 'Two bodies are clustering while the third behaves more like an intruder.',
+          cls: 'warn'
+        };
+      }
+
+      if (bounded && tq > 84 && coh > 84) {
+        return {
+          mode: resonant ? 'Triangle Lock (Resonant)' : 'Triangle Lock',
+          desc: resonant ? 'A coherent triangular structure is holding with strong bounded motion and simplified timing ratios.' : 'A coherent triangular structure is holding with strong bounded motion.',
+          cls: 'good'
+        };
+      }
+
+      if (bounded && tq > 68 && coh > 72) {
+        return {
+          mode: resonant ? 'Structure Forming (Resonant)' : 'Structure Forming',
+          desc: resonant ? 'The system is behaving like a bounded triangle and the motion is phasing into a simpler rhythm.' : 'The system is behaving like a bounded triangle, but still breathing and shifting.',
+          cls: 'good'
+        };
+      }
+
+      if (coh > 56) {
+        return {
+          mode: resonant ? 'Distorted Triangle (Resonant)' : 'Distorted Triangle',
+          desc: resonant ? 'A triangular geometry is present and the timing is partially aligned, but the shape remains under stress.' : 'A triangular geometry is present, but it is uneven or under stress.',
+          cls: 'warn'
+        };
+      }
+
+      return {
+        mode: resonant ? 'Chaotic Scatter (Phase Echo)' : 'Chaotic Scatter',
+        desc: resonant ? 'No durable geometric mode is holding, but a partial timing relationship is still flickering through the motion.' : 'No durable geometric mode is holding right now.',
+        cls: 'warn'
+      };
+    }
+
+    function classifyResonance(metrics) {
+      const score = metrics.resonance.resonanceScore;
+      if (score > 82) return { text: 'Resonance: strong', cls: 'good' };
+      if (score > 62) return { text: 'Resonance: partial', cls: 'warn' };
+      return { text: 'Resonance: weak', cls: 'warn' };
+    }
+
+    function classifyGold(metrics) {
+      if (metrics.goldFound) return { text: 'Gold state: locked', cls: 'good' };
+      if (metrics.goldCandidate) return { text: 'Gold state: building', cls: 'warn' };
+      return { text: 'Gold state: searching', cls: 'warn' };
+    }
+
+    function hexToRGBA(hex, alpha) {
+      const clean = hex.replace('#', '');
+      const bigint = parseInt(clean, 16);
+      const r = (bigint >> 16) & 255;
+      const g = (bigint >> 8) & 255;
+      const b = bigint & 255;
+      return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+
+    function drawBackground() {
+      ctx.clearRect(0, 0, width, height);
+      ctx.save();
+      ctx.strokeStyle = 'rgba(143, 179, 255, 0.08)';
+      ctx.lineWidth = 1;
+      for (let x = 0; x < width; x += 60) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, height);
+        ctx.stroke();
+      }
+      for (let y = 0; y < height; y += 60) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(width, y);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function drawBindingTriangle(metrics, structure) {
+      const alpha = clamp(metrics.coherence / 120, 0.06, 0.82);
+      let stroke = `rgba(255,255,255,${alpha * 0.68})`;
+      if (structure.mode.includes('Triangle Lock')) stroke = `rgba(142,230,163,${alpha * 0.9})`;
+      else if (structure.mode.includes('Binary')) stroke = `rgba(255,179,102,${alpha * 0.9})`;
+      else if (structure.mode === 'Ejection Mode') stroke = `rgba(255,122,122,${alpha * 0.9})`;
+
+      ctx.save();
+      ctx.strokeStyle = stroke;
+      ctx.lineWidth = 1.4 + alpha * 2.0;
+      ctx.beginPath();
+      ctx.moveTo(bodies[0].x, bodies[0].y);
+      ctx.lineTo(bodies[1].x, bodies[1].y);
+      ctx.lineTo(bodies[2].x, bodies[2].y);
+      ctx.closePath();
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawCOM(metrics) {
+      const com = metrics.com;
+
+      if (comTrail.length > 1) {
+        ctx.save();
+        for (let i = 1; i < comTrail.length; i++) {
+          const alpha = i / comTrail.length;
+          ctx.strokeStyle = `rgba(255,255,255,${alpha * 0.25})`;
+          ctx.lineWidth = 1.2;
+          ctx.beginPath();
+          ctx.moveTo(comTrail[i - 1].x, comTrail[i - 1].y);
+          ctx.lineTo(comTrail[i].x, comTrail[i].y);
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+
+      ctx.save();
+      ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(initialCOM.x, initialCOM.y);
+      ctx.lineTo(com.x, com.y);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.arc(com.x, com.y, 8, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(com.x - 10, com.y);
+      ctx.lineTo(com.x + 10, com.y);
+      ctx.moveTo(com.x, com.y - 10);
+      ctx.lineTo(com.x, com.y + 10);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawStructureRing(metrics, structure) {
+      if (!structure.mode.includes('Triangle Lock') && !structure.mode.includes('Structure Forming')) return;
+      structurePulse += 0.06;
+      const pulse = (Math.sin(structurePulse) + 1) * 0.5;
+      const radius = 28 + pulse * 18 + metrics.coherence * 0.1;
+      const alpha = structure.mode.includes('Triangle Lock') ? 0.28 + pulse * 0.18 : 0.14 + pulse * 0.1;
+      const com = metrics.com;
+
+      ctx.save();
+      ctx.strokeStyle = structure.mode.includes('Triangle Lock')
+        ? `rgba(142,230,163,${alpha})`
+        : `rgba(143,179,255,${alpha})`;
+      ctx.lineWidth = structure.mode.includes('Triangle Lock') ? 2.2 : 1.6;
+      ctx.beginPath();
+      ctx.arc(com.x, com.y, radius, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawResonanceRing(metrics) {
+      if (metrics.resonance.resonanceScore < 68) return;
+      resonancePulse += 0.045;
+      const pulse = (Math.sin(resonancePulse) + 1) * 0.5;
+      const radius = 54 + pulse * 14 + metrics.resonance.resonanceScore * 0.14;
+      const alpha = 0.08 + pulse * 0.08 + metrics.resonance.resonanceScore / 900;
+      const com = metrics.com;
+
+      ctx.save();
+      ctx.strokeStyle = `rgba(255,226,138,${alpha})`;
+      ctx.lineWidth = 1.3;
+      ctx.beginPath();
+      ctx.arc(com.x, com.y, radius, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawGoldAura(metrics) {
+      if (!metrics.goldFound) return;
+      goldPulse += 0.07;
+      const pulse = (Math.sin(goldPulse) + 1) * 0.5;
+      const com = metrics.com;
+      const radius = 86 + pulse * 20;
+      const alpha = 0.12 + pulse * 0.12;
+
+      ctx.save();
+      ctx.strokeStyle = `rgba(255,226,138,${alpha})`;
+      ctx.lineWidth = 2.4;
+      ctx.beginPath();
+      ctx.arc(com.x, com.y, radius, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawBodies() {
+      for (let i = 0; i < bodies.length; i++) {
+        const b = bodies[i];
+        const radius = 5 + Math.sqrt(b.m) * 0.55;
+
+        if (b.trail.length > 1) {
+          ctx.save();
+          for (let t = 1; t < b.trail.length; t++) {
+            const alpha = t / b.trail.length;
+            ctx.strokeStyle = hexToRGBA(colors[i], alpha * 0.45);
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(b.trail[t - 1].x, b.trail[t - 1].y);
+            ctx.lineTo(b.trail[t].x, b.trail[t].y);
+            ctx.stroke();
+          }
+          ctx.restore();
+        }
+
+        ctx.save();
+        const grad = ctx.createRadialGradient(b.x - radius * 0.3, b.y - radius * 0.3, radius * 0.2, b.x, b.y, radius * 1.4);
+        grad.addColorStop(0, '#ffffff');
+        grad.addColorStop(0.22, colors[i]);
+        grad.addColorStop(1, hexToRGBA(colors[i], 0.14));
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = hexToRGBA(colors[i], 0.9);
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+
+    function updateReadouts(metrics, structure, resonanceState) {
+      readouts.energy.textContent = fmt(metrics.energy, 1);
+      readouts.momentum.textContent = fmt(metrics.angularMomentum, 1);
+      readouts.nearest.textContent = fmt(metrics.nearest, 1);
+      readouts.radius.textContent = fmt(metrics.maxRadius, 1);
+      readouts.drift.textContent = fmt(metrics.drift, 1);
+      readouts.stability.textContent = fmt(metrics.stabilityScore, 1);
+      readouts.bounded.textContent = `${fmt(boundedTime, 1)} s`;
+      readouts.best.textContent = `${fmt(bestBoundedTime, 1)} s`;
+      readouts.triangle.textContent = fmt(metrics.geometry.triangleQuality, 1);
+      readouts.coherence.textContent = fmt(metrics.coherence, 1);
+      readouts.resonance.textContent = fmt(metrics.resonance.resonanceScore, 1);
+      readouts.ratio.textContent = metrics.resonance.bestRatio;
+      readouts.goldTimer.textContent = `${fmt(goldTimer, 1)} s`;
+      readouts.goldCount.textContent = String(goldFoundCount);
+
+      const state = classifyState(metrics);
+      readouts.statePill.textContent = state.text;
+      readouts.statePill.className = `pill ${state.cls}`;
+
+      readouts.structurePill.textContent = structure.mode;
+      readouts.structurePill.className = `pill ${structure.cls}`;
+      readouts.structureMode.textContent = structure.mode;
+      readouts.structureMode.className = `mode ${structure.cls}`;
+      readouts.structureDesc.textContent = structure.desc;
+
+      readouts.resonancePill.textContent = resonanceState.text;
+      readouts.resonancePill.className = `pill ${resonanceState.cls}`;
+      readouts.resonanceBanner.textContent = `Resonance: ${metrics.resonance.bestRatio} | score ${fmt(metrics.resonance.resonanceScore, 1)}`;
+
+      const goldState = classifyGold(metrics);
+      readouts.goldPill.textContent = goldState.text;
+      readouts.goldPill.className = `pill ${goldState.cls}`;
+
+      if (metrics.goldFound) {
+        readouts.goldBanner.style.display = 'block';
+        readouts.goldMode.textContent = 'Gold State';
+        readouts.goldDesc.textContent = 'A high-quality bounded configuration has held long enough to count as a discovery candidate.';
+        readouts.goldStats.textContent = `Stable ${fmt(goldTimer, 1)} s | stability ${fmt(metrics.stabilityScore, 1)} | coherence ${fmt(metrics.coherence, 1)} | resonance ${fmt(metrics.resonance.resonanceScore, 1)}`;
+      } else if (metrics.goldCandidate) {
+        readouts.goldBanner.style.display = 'block';
+        readouts.goldMode.textContent = 'Gold Candidate';
+        readouts.goldDesc.textContent = 'This run is meeting the quality thresholds. Hold it long enough to confirm the configuration.';
+        readouts.goldStats.textContent = `Build ${fmt(goldTimer, 1)} / 8.0 s | ratio ${metrics.resonance.bestRatio}`;
+      } else {
+        readouts.goldBanner.style.display = 'none';
+      }
+    }
+
+    function animate() {
+      if (!isPaused) stepSimulation();
+
+      const metrics = computeMetrics();
+      const structure = classifyStructure(metrics);
+      const resonanceState = classifyResonance(metrics);
+
+      drawBackground();
+      drawBindingTriangle(metrics, structure);
+      drawCOM(metrics);
+      drawStructureRing(metrics, structure);
+      drawResonanceRing(metrics);
+      drawGoldAura(metrics);
+      drawBodies();
+      updateReadouts(metrics, structure, resonanceState);
+      requestAnimationFrame(animate);
+    }
+
+    [controls.preset, controls.gravity, controls.distance, controls.velocity, controls.dt, controls.softening, controls.trail, controls.m1, controls.m2, controls.m3].forEach(el => {
+      el.addEventListener('input', updateLabels);
+      el.addEventListener('change', resetSimulation);
+    });
+
+    controls.resetBtn.addEventListener('click', resetSimulation);
+    controls.pauseBtn.addEventListener('click', () => {
+      isPaused = !isPaused;
+      controls.pauseBtn.textContent = isPaused ? 'Resume' : 'Pause';
+    });
+    controls.randomizeBtn.addEventListener('click', randomizeSystem);
+    controls.centerBtn.addEventListener('click', centerDrift);
+
+    updateLabels();
+    resetSimulation();
+    animate();
+  </script>
+</body>
+</html>
