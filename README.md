@@ -1,6 +1,6 @@
 🐉 Three Body Resonance Lab
 
-An interactive simulation exploring one of physics’ most famous problems:
+Interactive three-body dynamics lab for exploring stability, chaos, and orbital resonance:
 
 How do three gravitational bodies behave — and can they ever settle into stable, repeatable motion?
 
